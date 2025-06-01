@@ -1,94 +1,266 @@
+
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>容貌焦慮小測驗（前五題）</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <title>容貌焦慮互動測試</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="bootstrap.min.css" />
+  <style>
+    body {
+      font-family: "標楷體";
+      text-align: center;
+      padding: 2rem;
+    }
+    canvas {
+      border: 2px solid #ccc;
+      border-radius: 8px;
+    }
+    video {
+      border-radius: 8px;
+      border: 2px solid #ccc;
+    }
+    #videoPlayer {
+      display: none;
+    }
+  </style>
 </head>
-<body class="bg-light">
-  <div class="container py-5">
-    <h1 class="text-center mb-4">🌸 容貌焦慮小測驗（情境版・前五題）</h1>
+<body class="bg-light text-center py-4">
 
-    <form id="quizForm">
-      <!-- 題目1 -->
-      <div class="mb-3">
-        <label class="form-label">1. 早晨洗臉後發現鼻子有新痘痘，會因此心情變差或想遮掩嗎？</label>
-        <div>
-          <input type="radio" name="q1" value="1" required> 是
-          <input type="radio" name="q1" value="0"> 否
-        </div>
-      </div>
+  <div class="container">
+    <h1 class="mb-4">容貌焦慮互動測試</h1>
 
-      <!-- 題目2 -->
-      <div class="mb-3">
-        <label class="form-label">2. 視訊會議中，因為臉色不好或角度怪而想關掉鏡頭嗎？</label>
-        <div>
-          <input type="radio" name="q2" value="1" required> 是
-          <input type="radio" name="q2" value="0"> 否
-        </div>
-      </div>
+    <div class="mb-4">
+      <canvas id="canvas" width="480" height="360" class="shadow-sm"></canvas>
+    </div>
 
- <!-- 題目3 -->
- <div class="mb-3">
- <label class="form-label">3. 試穿衣服時，因覺得身材不好看而放棄購買嗎？</label>
- <div>
- <input type="radio" name="q3" value="1" required> 是
- <input type="radio" name="q3" value="0"> 否
- </div>
- </div>
+    <div id="prompt" class="lead mb-3">按下開始鈕即可開始作答</div>
 
- <!-- 題目4 -->
- <div class="mb-3">
- <label class="form-label">4. 因為素顏穿得隨便，拍大合照時想拒絕嗎？</label>
- <div>
- <input type="radio" name="q4" value="1" required> 是
- <input type="radio" name="q4" value="0"> 否
- </div>
- </div>
+    <form id="quizForm" class="mb-3" style="display:none;"></form>
 
- <!-- 題目5 -->
- <div class="mb-3">
- <label class="form-label">5. 社群平台被標註角度不佳的照片，會想刪除或隱藏嗎？</label>
- <div>
- <input type="radio" name="q5" value="1" required> 是
- <input type="radio" name="q5" value="0"> 否
- </div>
- </div>
+    <button id="actionBtn" class="btn btn-primary btn-lg">開始</button>
 
- <button type="submit" class="btn btn-primary">提交測驗</button>
- </form>
+    <div id="result" class="mt-4 fw-bold"></div>
 
+    <div class="d-flex justify-content-center mt-4">
+      <video
+        id="videoPlayer"
+        width="480"
+        height="360"
+        autoplay
+        muted
+        playsinline
+		loop
+        class="shadow-sm"
+      >
+        <source id="videoSource" src="" type="video/mp4" />
+        您的瀏覽器不支援影片播放。
+      </video>
+    </div>
+  </div>
 
- <div id="result" class="mt-4"></div>
- </div>
+  <script src="bootstrap.bundle.min.js"></script>
+  <script>
+    const questionBank = [
+      {
+        question: "你會多頻繁地、有意地檢視自己的外觀容顏，包括照鏡子，利用可以反射的表面，如商店的櫥窗。包括直視或用手指觸碰，但不包括無意間剛好看到？",
+        options: [
+          { text: "每天約40次，或更多", score: 4 },
+          { text: "每天約20次", score: 3 },
+          { text: "每天約10次", score: 2 },
+          { text: "每天約5次", score: 1 },
+          { text: "沒有，或1-2次(只有出門時看看)", score: 0 },
+        ],
+      },
+      {
+        question: "覺得自己的外觀目前 醜陋、對人沒吸引力，或者「不對勁」？",
+        options: [
+          { text: "非常醜陋或「不對勁」", score: 4 },
+          { text: "很沒吸引力", score: 3 },
+          { text: "中等程度沒吸引力", score: 2 },
+          { text: "一點點", score: 1 },
+          { text: "還好，沒什麼感覺", score: 0 },
+        ],
+      },
+      {
+        question: "請問你的容貌外觀造成自己多大的壓力跟心情不好",
+        options: [
+          { text: "極度", score: 4 },
+          { text: "非常大", score: 3 },
+          { text: "中等", score: 2 },
+          { text: "輕微", score: 1 },
+          { text: "一點都不會", score: 0 },
+        ],
+      },
+      {
+        question: "容貌外觀多大程度造成你避免參與活動跟人際互動",
+        options: [
+          { text: "完全避免", score: 4 },
+          { text: "4次中約有3次", score: 3 },
+          { text: "一半的機會避免", score: 2 },
+          { text: "4次中約有1次", score: 1 },
+          { text: "從來不會", score: 0 },
+        ],
+      },
+      {
+        question: "你會多在意，老是掛念著自己的容貌外觀；就是腦子經常在想，無法抑制",
+        options: [
+          { text: "極度在意，一直在想", score: 4 },
+          { text: "非常在意，老是在想", score: 3 },
+          { text: "中度在意", score: 2 },
+          { text: "輕度在意", score: 1 },
+          { text: "完全不會去想", score: 0 },
+        ],
+      },
+      {
+        question: "假如目前有伴侶，你覺得自己的容貌外觀有多大程度會影響到你們的關係(像被嫌棄、爭執) 假如目前沒有伴侶，你覺得自己的容貌外觀有多大程度會影響你們的約會或關係進展",
+        options: [
+          { text: "極度", score: 4 },
+          { text: "非常大", score: 3 },
+          { text: "中等", score: 2 },
+          { text: "輕微", score: 1 },
+          { text: "一點都不會", score: 0 },
+        ],
+      },
+      {
+        question: "覺得自己的容貌外觀有多大程度會影響到你工作或學習的能力，假如沒有工作或讀書，請以社交狀況、處理一般事務回答",
+        options: [
+          { text: "極度，無法從事工作、上學，或活動", score: 4 },
+          { text: "非常大", score: 3 },
+          { text: "中等", score: 2 },
+          { text: "輕微", score: 1 },
+          { text: "一點都不會", score: 0 },
+        ],
+      },
+    ];
 
- <script>
- document.getElementById('quizForm').addEventListener('submit', function(event) {
- event.preventDefault();
- let score = 0;
- for (let i = 1; i <= 5; i++) {
- let radios = document.getElementsByName('q' + i);
- for (let radio of radios) {
- if (radio.checked) {
- score += parseInt(radio.value);
- }
- }
- }
- let resultText = '';
- if (score <= 1) {
- resultText = '🌱 外貌焦慮極低：幾乎不受影響。';
- } else if (score <= 3) {
- resultText = '🌷 輕度焦慮：偶爾會受外貌影響情緒。';
- } else if (score === 4) {
- resultText = '🌼 中度焦慮：外貌已成為自我壓力來源之一。';
- } else {
- resultText = '🌹 高度焦慮：建議進一步關注自我價值與情緒調適。';
- }
- document.getElementById('result').innerHTML = `<div class="alert alert-info">你的得分是 <strong>${score}</strong> 分。<br>${resultText}<br><font color="red">後續會有相關動畫呈現，得分計算會消失，問答測試在手機網頁上呈現，動畫互動在大螢幕上呈現。</font></div>`;
- });
- </script>
+    const canvas = document.getElementById("canvas");
+    const context = canvas.getContext("2d");
+    const form = document.getElementById("quizForm");
+    const promptDiv = document.getElementById("prompt");
+    const resultDiv = document.getElementById("result");
+    const actionBtn = document.getElementById("actionBtn");
+    const videoPlayer = document.getElementById("videoPlayer");
+    const videoSource = document.getElementById("videoSource");
 
- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    let anxietyLevel = 0;
+    let answers = [];
+    let currentQuestionIndex = -1;
+
+    const webcam = document.createElement("video");
+    webcam.setAttribute("autoplay", true);
+    webcam.setAttribute("playsinline", true);
+    webcam.style.display = "none";
+    document.body.appendChild(webcam);
+
+    navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
+      webcam.srcObject = stream;
+    });
+
+    function draw() {
+      context.drawImage(webcam, 0, 0, canvas.width, canvas.height);
+      if (anxietyLevel > 0) {
+        let imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        let data = imageData.data;
+        for (let i = 0; i < data.length; i += 4) {
+          data[i] += (Math.random() - 0.5) * anxietyLevel * 20;
+          data[i + 1] += (Math.random() - 0.5) * anxietyLevel * 20;
+          data[i + 2] += (Math.random() - 0.5) * anxietyLevel * 20;
+        }
+        context.putImageData(imageData, 0, 0);
+
+        const freq = anxietyLevel * 0.05;
+        const amp = anxietyLevel * 0.8;
+        let img = context.getImageData(0, 0, canvas.width, canvas.height);
+        let tempCanvas = document.createElement("canvas");
+        let tempCtx = tempCanvas.getContext("2d");
+        tempCanvas.width = canvas.width;
+        tempCanvas.height = canvas.height;
+        tempCtx.putImageData(img, 0, 0);
+
+        for (let y = 0; y < canvas.height; y++) {
+          let offset = Math.sin(y * freq) * amp;
+          context.drawImage(tempCanvas, 0, y, canvas.width, 1, offset, y, canvas.width, 1);
+        }
+      }
+      requestAnimationFrame(draw);
+    }
+
+    draw();
+
+    function showQuestion(index) {
+      form.innerHTML = "";
+      resultDiv.textContent = "";
+      const q = questionBank[index];
+      const qTitle = document.createElement("p");
+      qTitle.className = "fw-bold";
+      qTitle.textContent = q.question;
+      form.appendChild(qTitle);
+
+      q.options.forEach((opt, i) => {
+        const div = document.createElement("div");
+        div.className = "form-check text-start";
+        const radio = document.createElement("input");
+        radio.type = "radio";
+        radio.name = "answer";
+        radio.value = opt.score;
+        radio.className = "form-check-input";
+        const label = document.createElement("label");
+        label.className = "form-check-label";
+        label.textContent = opt.text;
+        div.appendChild(radio);
+        div.appendChild(label);
+        form.appendChild(div);
+      });
+
+      form.style.display = "block";
+    }
+
+    function submitAnswer() {
+      const selected = form.querySelector('input[name="answer"]:checked');
+      if (!selected) {
+        alert("請先選擇一個選項！");
+        return false;
+      }
+      const score = parseInt(selected.value);
+      answers[currentQuestionIndex] = score;
+      anxietyLevel += score;
+      return true;
+    }
+
+    actionBtn.addEventListener("click", () => {
+      if (currentQuestionIndex === -1) {
+        // 重新開始，重置扭曲程度和變數
+        anxietyLevel = 0;
+        answers = [];
+        videoPlayer.style.display = "none";
+        videoPlayer.pause();
+        promptDiv.style.display = "none";
+        currentQuestionIndex = 0;
+        showQuestion(currentQuestionIndex);
+        actionBtn.textContent = "下一題";
+      } else if (currentQuestionIndex < questionBank.length) {
+        if (!submitAnswer()) return;
+        currentQuestionIndex++;
+        if (currentQuestionIndex === questionBank.length) {
+          form.style.display = "none";
+          actionBtn.textContent = "查看結果";
+        } else {
+          showQuestion(currentQuestionIndex);
+        }
+      } else {
+        // 顯示影片結果，但不改變 anxietyLevel，扭曲持續
+        const totalScore = answers.reduce((a, b) => a + b, 0);
+        videoSource.src = totalScore >= 14 ? "High.mp4" : "Low.mp4";
+        videoPlayer.style.display = "block";
+        videoPlayer.load();
+        videoPlayer.play();
+
+        actionBtn.textContent = "重新開始";
+        currentQuestionIndex = -1;
+        // 注意：不重置 anxietyLevel 讓扭曲持續
+      }
+    });
+  </script>
 </body>
 </html>
