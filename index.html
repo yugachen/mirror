@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh">
 <head>
@@ -37,7 +38,7 @@
 
     <form id="quizForm" class="mb-3" style="display:none;"></form>
 
-    <button id="actionBtn" class="btn btn-primary btn-lg">開始</button>
+    
 
     <div id="result" class="mt-4 fw-bold"></div>
 
@@ -56,6 +57,11 @@
         您的瀏覽器不支援影片播放。
       </video>
     </div>
+	
+	<br>
+	
+	<button id="actionBtn" class="btn btn-primary btn-lg">開始</button>
+	
   </div>
 
   <script src="bootstrap.bundle.min.js"></script>
@@ -232,6 +238,8 @@
         // 重新開始，重置扭曲程度和變數
         anxietyLevel = 0;
         answers = [];
+		canvas.style.display = "block";
+		canvas.style.margin = "0 auto";
         videoPlayer.style.display = "none";
         videoPlayer.pause();
         promptDiv.style.display = "none";
@@ -252,6 +260,7 @@
         const totalScore = answers.reduce((a, b) => a + b, 0);
         videoSource.src = totalScore >= 14 ? "High.mp4" : "Low.mp4";
         videoPlayer.style.display = "block";
+        canvas.style.display = "none";
         videoPlayer.load();
         videoPlayer.play();
 
